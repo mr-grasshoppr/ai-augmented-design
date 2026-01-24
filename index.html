@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Augmented Design - Living Laboratory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --accent: #ffff00; /* Changes monthly in production */
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+            cursor: crosshair;
+        }
+
+        /* Generative Grid Background */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            z-index: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 49px, #ffffff 49px, #ffffff 50px),
+                repeating-linear-gradient(90deg, transparent, transparent 49px, #ffffff 49px, #ffffff 50px);
+        }
+
+        /* Dynamic Cursor */
+        .custom-cursor {
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor.hover {
+            transform: scale(2);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 32px;
+            z-index: 100;
+            text-align: right;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* WIP Badge */
+        .wip-badge {
+            position: fixed;
+            top: 32px;
+            left: 32px;
+            z-index: 100;
+            background: var(--accent);
+            color: #000000;
+            padding: 12px 20px;
+            border: 2px solid var(--accent);
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .wip-text {
+            font-size: 11px;
+            letter-spacing: 2px;
+        }
+
+        .wip-subtext {
+            font-size: 9px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+        }
+
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 16px;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+        }
+
+        /* Hero - Generative Typography */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 80px 5vw;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hero-content {
+            max-width: 1400px;
+        }
+
+        .meta-info {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+            color: rgba(255,255,255,0.5);
+        }
+
+        .meta-info span {
+            margin-right: 32px;
+        }
+
+        /* Generative Headline */
+        .generative-headline {
+            font-family: 'Arial Black', sans-serif;
+            font-size: clamp(60px, 12vw, 180px);
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -0.05em;
+            margin-bottom: 48px;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .word {
+            display: inline-block;
+            position: relative;
+        }
+
+        .word.skew {
+            transform: skewX(-8deg);
+        }
+
+        .word.italic {
+            font-style: italic;
+        }
+
+        .word.outline {
+            color: transparent;
+            -webkit-text-stroke: 2px #ffffff;
+        }
+
+        .word.accent {
+            color: var(--accent);
+        }
+
+        .word.compressed {
+            letter-spacing: -0.1em;
+        }
+
+        .hero-statement {
+            font-family: 'Georgia', serif;
+            font-size: clamp(18px, 2.5vw, 32px);
+            line-height: 1.4;
+            max-width: 600px;
+            margin-bottom: 64px;
+            font-style: italic;
+        }
+
+        .cta-container {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .cta-primary {
+            background: var(--accent);
+            color: #000000;
+            padding: 20px 48px;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            border: 2px solid var(--accent);
+        }
+
+        .cta-primary:hover {
+            background: transparent;
+            color: var(--accent);
+        }
+
+        .cta-secondary {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            letter-spacing: 1px;
+            border-bottom: 1px solid #ffffff;
+            padding-bottom: 4px;
+            transition: color 0.3s, border-color 0.3s;
+        }
+
+        .cta-secondary:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Live Activity Feed */
+        .activity-strip {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--accent);
+            color: #000000;
+            padding: 12px 0;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .activity-content {
+            display: flex;
+            animation: scroll 30s linear infinite;
+            white-space: nowrap;
+        }
+
+        .activity-item {
+            margin-right: 80px;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* Work Archive Section */
+        .archive {
+            min-height: 100vh;
+            padding: 100px 5vw;
+            background: #000000;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-label {
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-family: 'Arial Black', sans-serif;
+            font-size: clamp(40px, 6vw, 80px);
+            font-weight: 900;
+            margin-bottom: 64px;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        /* Deliberate Hierarchy Grid */
+        .work-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 400px);
+            gap: 0;
+            background: #000000;
+        }
+
+        .work-item {
+            background: #000000;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #ffff00;
+        }
+
+        .work-item:hover {
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+
+        /* TIER 1: Hero (First item - 2/3 width, full height) */
+        .work-item:nth-child(1) { 
+            grid-column: 1 / 3;
+            grid-row: 1 / 3;
+        }
+
+        /* TIER 2: Secondary (Items 2-3 - 1/3 width, half height each, stacked) */
+        .work-item:nth-child(2) { 
+            grid-column: 3 / 4;
+            grid-row: 1 / 2;
+        }
+        
+        .work-item:nth-child(3) { 
+            grid-column: 3 / 4;
+            grid-row: 2 / 3;
+        }
+
+        /* TIER 3: Tertiary (Items 4-6 - equal thirds, below hero) */
+        .work-item:nth-child(4) { 
+            grid-column: 1 / 2;
+            grid-row: 3 / 4;
+        }
+        
+        .work-item:nth-child(5) { 
+            grid-column: 2 / 3;
+            grid-row: 3 / 4;
+        }
+        
+        .work-item:nth-child(6) { 
+            grid-column: 3 / 4;
+            grid-row: 3 / 4;
+        }
+
+        /* Generative Visual */
+        .work-visual {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hero item gets full visual */
+        .work-item:nth-child(1) .work-visual {
+            height: calc(100% - 160px);
+        }
+
+        /* Secondary items: smaller visual */
+        .work-item:nth-child(2) .work-visual,
+        .work-item:nth-child(3) .work-visual {
+            height: calc(100% - 140px);
+        }
+
+        /* Tertiary items: compact visual */
+        .work-item:nth-child(4) .work-visual,
+        .work-item:nth-child(5) .work-visual,
+        .work-item:nth-child(6) .work-visual {
+            height: 250px;
+        }
+
+        canvas.generative {
+            width: 100%;
+            height: 100%;
+        }
+
+        .work-content {
+            padding: 24px;
+            border-top: 2px solid #ffffff;
+            font-family: 'Courier New', monospace;
+        }
+
+        .work-meta {
+            font-size: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .work-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.01em;
+            font-family: 'Georgia', serif;
+            line-height: 1.3;
+        }
+
+        .work-author {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .work-description {
+            font-size: 13px;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.8);
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 48px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid #ffffff;
+            color: #ffffff;
+            padding: 12px 24px;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--accent);
+            color: #000000;
+            border-color: var(--accent);
+        }
+
+        /* Contribute Section */
+        .contribute {
+            padding: 120px 5vw;
+            background: var(--accent);
+            color: #000000;
+        }
+
+        .contribute-content {
+            max-width: 800px;
+        }
+
+        .contribute h2 {
+            font-family: 'Arial Black', sans-serif;
+            font-size: clamp(48px, 8vw, 120px);
+            font-weight: 900;
+            line-height: 0.9;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+        }
+
+        .contribute p {
+            font-family: 'Georgia', serif;
+            font-size: clamp(18px, 2vw, 28px);
+            line-height: 1.4;
+            margin-bottom: 48px;
+            font-style: italic;
+        }
+
+        .contribute-cta {
+            background: #000000;
+            color: var(--accent);
+            padding: 20px 48px;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            display: inline-block;
+            border: 2px solid #000000;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .contribute-cta:hover {
+            background: transparent;
+            color: #000000;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .wip-badge {
+                top: 16px;
+                left: 16px;
+                padding: 8px 16px;
+                font-size: 9px;
+            }
+
+            .wip-text {
+                font-size: 10px;
+            }
+
+            .wip-subtext {
+                font-size: 8px;
+            }
+
+            .work-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+            /* All items stack vertically on mobile */
+            .work-item:nth-child(1),
+            .work-item:nth-child(2),
+            .work-item:nth-child(3),
+            .work-item:nth-child(4),
+            .work-item:nth-child(5),
+            .work-item:nth-child(6) {
+                grid-column: 1 / 2 !important;
+                grid-row: auto !important;
+            }
+
+            .work-visual,
+            .work-item:nth-child(1) .work-visual,
+            .work-item:nth-child(2) .work-visual,
+            .work-item:nth-child(3) .work-visual,
+            .work-item:nth-child(4) .work-visual,
+            .work-item:nth-child(5) .work-visual,
+            .work-item:nth-child(6) .work-visual {
+                height: 300px !important;
+            }
+
+            .generative-headline {
+                font-size: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="custom-cursor"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- WIP Indicator -->
+    <div class="wip-badge">
+        <span class="wip-text">WORK IN PROGRESS</span>
+        <span class="wip-subtext">Seeking Submissions</span>
+    </div>
+
+    <nav>
+        <a href="#archive">Archive</a>
+        <a href="#contribute">Contribute</a>
+        <a href="https://axlab.io">AXLab</a>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <div class="meta-info">
+                <span>Version 0.1.0</span>
+                <span>147 Submissions</span>
+                <span>Live Database</span>
+            </div>
+
+            <h1 class="generative-headline" id="headline">
+                <span class="word">AI</span>
+                <span class="word">+</span>
+                <span class="word accent">Human</span>
+                <span class="word">=</span><br>
+                <span class="word outline">Future</span>
+                <span class="word skew">Design</span>
+            </h1>
+
+            <p class="hero-statement">
+                A living archive documenting the evolution of design practice at the intersection of artificial intelligence and human creativity.
+            </p>
+
+            <div class="cta-container">
+                <a href="#contribute" class="cta-primary">Submit Work</a>
+                <a href="#archive" class="cta-secondary">Explore Archive →</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="archive" id="archive">
+        <div class="section-label">Active Research</div>
+        <h2 class="section-title">Work Archive</h2>
+
+        <div class="filters">
+            <button class="filter-btn active">All</button>
+            <button class="filter-btn">Studies</button>
+            <button class="filter-btn">Toolkits</button>
+            <button class="filter-btn">Projects</button>
+            <button class="filter-btn">Curriculum</button>
+        </div>
+
+        <div class="work-grid">
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="1"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Research / Whoville University</div>
+                    <h3 class="work-title">Prompt Engineering Patterns</h3>
+                    <p class="work-author">Dr. Horton Hears-a-Prompt</p>
+                    <p class="work-description">
+                        Identifying effective collaboration patterns when designers work with large language models in ideation phases.
+                    </p>
+                </div>
+            </div>
+
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="2"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Toolkit / Cat-in-the-Hat Institute</div>
+                    <h3 class="work-title">Diffusion Design Kit</h3>
+                    <p class="work-author">Thing One & Thing Two</p>
+                </div>
+            </div>
+
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="3"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Project / Sneetch Design Co.</div>
+                    <h3 class="work-title">Generative Brand Systems</h3>
+                    <p class="work-author">The Lorax</p>
+                </div>
+            </div>
+
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="4"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Curriculum / Truffula Tree Academy</div>
+                    <h3 class="work-title">AI Studio Course</h3>
+                    <p class="work-author">Sam-I-Am</p>
+                </div>
+            </div>
+
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="5"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Research / Grinch Labs</div>
+                    <h3 class="work-title">Co-creation Frameworks</h3>
+                    <p class="work-author">Yertle the Turtle</p>
+                </div>
+            </div>
+
+            <div class="work-item">
+                <div class="work-visual">
+                    <canvas class="generative" data-seed="6"></canvas>
+                </div>
+                <div class="work-content">
+                    <div class="work-meta">Project / Fox-in-Socks Studio</div>
+                    <h3 class="work-title">Typography AI Assistant</h3>
+                    <p class="work-author">Bartholomew Cubbins</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contribute" id="contribute">
+        <div class="contribute-content">
+            <h2>Your work<br>belongs here</h2>
+            <p>
+                Share research, tools, projects, or curricula that advance our collective understanding of AI in design practice.
+            </p>
+            <a href="#" class="contribute-cta" onclick="showSubmitDialog()">Start Submission</a>
+        </div>
+    </section>
+
+    <div class="activity-strip">
+        <div class="activity-content">
+            <span class="activity-item">● New: "Prompt Engineering Guide" by Dr. Horton</span>
+            <span class="activity-item">● Updated: "Generative Brand Systems" by The Lorax</span>
+            <span class="activity-item">● Featured: "AI Studio Course" by Sam-I-Am</span>
+            <span class="activity-item">● New: "Co-creation Patterns" by Yertle the Turtle</span>
+            <span class="activity-item">● New: "Prompt Engineering Guide" by Dr. Horton</span>
+            <span class="activity-item">● Updated: "Generative Brand Systems" by The Lorax</span>
+            <span class="activity-item">● Featured: "AI Studio Course" by Sam-I-Am</span>
+            <span class="activity-item">● New: "Co-creation Patterns" by Yertle the Turtle</span>
+        </div>
+    </div>
+
+    <script>
+        // Custom cursor
+        const cursor = document.querySelector('.custom-cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX - 20 + 'px';
+            cursor.style.top = e.clientY - 20 + 'px';
+        });
+
+        document.querySelectorAll('a, button').forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+        });
+
+        // Generative headline variations
+        const headline = document.getElementById('headline');
+        const words = headline.querySelectorAll('.word');
+        
+        function randomizeHeadline() {
+            const styles = ['skew', 'italic', 'outline', 'accent', 'compressed'];
+            words.forEach((word, i) => {
+                if (i !== 2) { // Keep "Human" always accented
+                    word.className = 'word';
+                    if (Math.random() > 0.5) {
+                        const style = styles[Math.floor(Math.random() * styles.length)];
+                        word.classList.add(style);
+                    }
+                }
+            });
+        }
+
+        // Randomize on load
+        randomizeHeadline();
+
+        // Generative canvas visuals
+        function drawGenerative(canvas, seed) {
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth * 2;
+            const height = canvas.height = canvas.offsetHeight * 2;
+            
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+
+            // Seeded random
+            function random() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
+            // Different pattern for each seed
+            const canvasSeed = parseInt(canvas.dataset.seed);
+            
+            if (canvasSeed === 1) {
+                // Concentric circles
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 4;
+                for (let i = 0; i < 8; i++) {
+                    ctx.beginPath();
+                    ctx.arc(width/2, height/2, (i + 1) * 60, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            } else if (canvasSeed === 2) {
+                // Diagonal lines
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 6;
+                for (let i = 0; i < 15; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * 80, 0);
+                    ctx.lineTo(i * 80 + height, height);
+                    ctx.stroke();
+                }
+            } else if (canvasSeed === 3) {
+                // Grid of squares
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 3;
+                const gridSize = 80;
+                for (let x = 0; x < width; x += gridSize) {
+                    for (let y = 0; y < height; y += gridSize) {
+                        ctx.strokeRect(x + 10, y + 10, gridSize - 20, gridSize - 20);
+                    }
+                }
+            } else if (canvasSeed === 4) {
+                // Radiating lines from center
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                for (let i = 0; i < 24; i++) {
+                    const angle = (i / 24) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(
+                        centerX + Math.cos(angle) * width,
+                        centerY + Math.sin(angle) * height
+                    );
+                    ctx.stroke();
+                }
+            } else if (canvasSeed === 5) {
+                // Zigzag pattern
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 5;
+                const step = 60;
+                for (let y = 0; y < height; y += step * 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    for (let x = 0; x < width; x += step) {
+                        ctx.lineTo(x, y + (x / step % 2 === 0 ? 0 : step));
+                    }
+                    ctx.stroke();
+                }
+            } else if (canvasSeed === 6) {
+                // Spiral
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                ctx.beginPath();
+                for (let i = 0; i < 360; i++) {
+                    const angle = i * Math.PI / 180;
+                    const radius = i * 2;
+                    const x = centerX + Math.cos(angle) * radius;
+                    const y = centerY + Math.sin(angle) * radius;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+            }
+        }
+
+        // Generate visuals for each canvas
+        document.querySelectorAll('canvas.generative').forEach(canvas => {
+            const seed = parseInt(canvas.dataset.seed) * 1000;
+            drawGenerative(canvas, seed);
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+
+        // Submit dialog
+        function showSubmitDialog() {
+            alert('SUBMISSION INTERFACE\n\n→ Multi-step conversational form\n→ Real-time preview\n→ Drag & drop media\n→ Markdown support\n→ Auto-save draft\n\nThis would be a sophisticated form experience, not just fields.');
+        }
+    </script>
+</body>
+</html>
