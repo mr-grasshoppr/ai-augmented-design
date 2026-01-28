@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0045)file:///Users/mrogers/Downloads/index_18.html -->
+<!-- saved from url=(0045)file:///Users/mrogers/Downloads/index_19.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -710,7 +710,7 @@
     </style>
 </head>
 <body>
-    <div class="custom-cursor" style="left: 1042px; top: 502px;"></div>
+    <div class="custom-cursor" style="left: 1355px; top: 225px;"></div>
     <div class="grid-overlay"></div>
 
     <!-- WIP Indicator -->
@@ -720,8 +720,8 @@
     </div>
 
     <nav>
-        <a href="file:///Users/mrogers/Downloads/index_18.html#archive">Archive</a>
-        <a href="file:///Users/mrogers/Downloads/index_18.html#contribute">Contribute</a>
+        <a href="file:///Users/mrogers/Downloads/index_19.html#archive">Archive</a>
+        <a href="file:///Users/mrogers/Downloads/index_19.html#contribute">Contribute</a>
         <a href="https://axlab.io/">AXLab</a>
     </nav>
 
@@ -738,8 +738,8 @@
                 <span class="word outline">+</span>
                 <span class="word accent">AI</span>
                 <span class="word">=</span><br>
-                <span class="word accent">Future</span>
-                <span class="word">Design</span>
+                <span class="word">Future</span>
+                <span class="word accent">Design</span>
             </h1>
 
             <p class="hero-statement">
@@ -747,8 +747,8 @@
             </p>
 
             <div class="cta-container">
-                <a href="file:///Users/mrogers/Downloads/index_18.html#contribute" class="cta-primary">Submit Work</a>
-                <a href="file:///Users/mrogers/Downloads/index_18.html#archive" class="cta-secondary">Explore Archive →</a>
+                <a href="file:///Users/mrogers/Downloads/index_19.html#contribute" class="cta-primary">Submit Work</a>
+                <a href="file:///Users/mrogers/Downloads/index_19.html#archive" class="cta-secondary">Explore Archive →</a>
             </div>
         </div>
     </section>
@@ -843,7 +843,7 @@
             <p>
                 Share research, tools, projects, or curricula that advance our collective understanding of AI in design practice.
             </p>
-            <a href="file:///Users/mrogers/Downloads/index_18.html#" class="contribute-cta" onclick="showSubmitDialog()">Start Submission</a>
+            <a href="file:///Users/mrogers/Downloads/index_19.html#" class="contribute-cta" onclick="showSubmitDialog()">Start Submission</a>
         </div>
     </section>
 
@@ -1026,8 +1026,17 @@
 
         // Submit dialog
         function showSubmitDialog() {
-            document.getElementById('submission-modal').classList.add('active');
-            document.body.style.overflow = 'hidden';
+            // Detect mobile devices
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // On mobile, open form in new tab instead of modal
+                window.open('https://airtable.com/appr2N8i3UTowCRx3/pagiVcxzmJfCCWT7L', '_blank');
+            } else {
+                // On desktop, show modal
+                document.getElementById('submission-modal').classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
         }
 
         function closeSubmissionModal() {
